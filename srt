@@ -1,0 +1,385 @@
+
+
+  <!DOCTYPE html>
+  <html lang="fa" dir="rtl">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مبدل هوشمند گفتار به زیرنویس</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
+    <style>
+      body { font-family: 'Vazirmatn', sans-serif; background-color: #0c0a09; }
+      .main-card { background-color: #111827; background-image: radial-gradient(circle at center, rgba(31, 41, 55, 0.5) 0%, rgba(17, 24, 39, 0) 70%); border: 1px solid #374151; box-shadow: 0 0 40px rgba(79, 70, 229, 0.1); }
+      .form-input { background-color: #1a202c; border: 1px solid #4a5568; color: #e2e8f0; transition: all 0.2s ease-in-out; }
+      .form-input:focus { outline: none; border-color: #4f46e5; box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.4); }
+      .btn-primary { background-color: #4f46e5; transition: background-color 0.2s; }
+      .btn-primary:hover:not(:disabled) { background-color: #4338ca; }
+      .btn-primary:disabled { background-color: #4a5568; cursor: not-allowed; }
+      .loader { border-top-color: #6366f1; animation: spin 1s linear infinite; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      .fade-in-up { animation: fadeInUp 0.5s ease-out forwards; opacity: 0; }
+      @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+      .engine-selector label { background-color: #1f2937; border: 2px solid #374151; transition: all .2s; color: #e2e8f0; }
+      .engine-selector input:checked + label { border-color: #4f46e5; background-color: #4f46e520; color: #a5b4fc; }
+      .download-btn { background: linear-gradient(135deg, #3b82f6, #1d4ed8); transition: all 0.3s ease; }
+      .download-btn:hover { background: linear-gradient(135deg, #2563eb, #1e40af); transform: translateY(-1px); box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3); }
+      .download-icon { transition: transform 0.2s ease; }
+      .download-btn:hover .download-icon { transform: translateY(-2px); }
+      .transcript-box { background-color: #1f2937; border: 1px solid #4a5568; max-height: 150px; overflow-y: auto; direction: ltr; text-align: left; }
+    </style>
+  </head>
+  <body class="flex items-center justify-center min-h-screen p-4">
+    <div class="w-full max-w-2xl main-card rounded-2xl shadow-2xl p-6 md:p-8">
+      <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-white tracking-tight">مبدل هوشمند گفتار به زیرنویس</h1>
+        <p class="text-gray-400 mt-2">با انتخاب سرویس‌دهنده، فایل صوتی را به زیرنویس حرفه‌ای تبدیل کنید.</p>
+      </div>
+      <form id="transcription-form" class="space-y-6">
+        
+        <fieldset>
+          <legend class="block text-sm font-medium text-gray-300 mb-2">۱. سرویس‌دهنده را انتخاب کنید</legend>
+          <div class="grid grid-cols-3 gap-4 engine-selector">
+          <input type="radio" name="engine" value="groq" id="engine-groq" class="hidden" checked>
+          <label for="engine-groq" class="block cursor-pointer text-center p-4 rounded-lg font-semibold text-sm">گروک ویسپر لارج۳</label>
+          <input type="radio" name="engine" value="gemini" id="engine-gemini" class="hidden">
+          <label for="engine-gemini" class="block cursor-pointer text-center p-4 rounded-lg font-semibold text-sm">جمنای ۲.۵</label>
+    <input type="radio" name="engine" value="deepgram" id="engine-deepgram" class="hidden">
+          <label for="engine-deepgram" class="block cursor-pointer text-center p-4 rounded-lg font-semibold text-sm">دیپ‌گرام نوا ۳</label>
+          </div>
+        </fieldset>
+
+        <div id="api-keys-section" class="space-y-4">
+          <div id="deepgram-key-section">
+            <div class="flex justify-between items-center mb-1">
+              <label for="deepgramApiKey" class="block text-sm font-medium text-gray-300">کلید API دیپ‌گرام</label>
+              <a href="https://console.deepgram.com" target="_blank" class="text-xs text-indigo-400 hover:text-indigo-300 transition">(دریافت کلید)</a>
+            </div>
+            <input type="password" id="deepgramApiKey" name="deepgramApiKey" class="form-input w-full rounded-md p-2.5 text-left" placeholder="کلید دیپ‌گرام خود را وارد کنید...">
+          </div>
+          <div id="groq-key-section" class="hidden">
+            <div class="flex justify-between items-center mb-1">
+              <label for="groqApiKey" class="block text-sm font-medium text-gray-300">کلید API گروک</label>
+              <a href="https://console.groq.com/keys" target="_blank" class="text-xs text-indigo-400 hover:text-indigo-300 transition">(دریافت کلید)</a>
+            </div>
+            <input type="password" id="groqApiKey" name="groqApiKey" class="form-input w-full rounded-md p-2.5 text-left" placeholder="کلید گروک خود را وارد کنید...">
+          </div>
+          <div id="gemini-key-section" class="hidden">
+            <div class="flex justify-between items-center mb-1">
+              <label for="geminiApiKey" class="block text-sm font-medium text-gray-300">کلید API جمنای</label>
+              <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-xs text-indigo-400 hover:text-indigo-300 transition">(دریافت کلید)</a>
+            </div>
+            <input type="password" id="geminiApiKey" name="geminiApiKey" class="form-input w-full rounded-md p-2.5 text-left" placeholder="کلید جمنای خود را وارد کنید...">
+          </div>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">۲. فایل صوتی را بارگذاری کنید</label>
+          <label class="flex items-center justify-center w-full px-4 py-3 bg-gray-700/50 border-2 border-dashed border-gray-600 rounded-lg cursor-pointer hover:bg-gray-700 transition-colors">
+            <svg class="w-6 h-6 text-gray-400 ml-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg>
+            <span id="file-label" class="text-gray-400 font-medium">برای انتخاب فایل کلیک کنید</span>
+            <input type="file" id="audioFile" name="audioFile" class="hidden" required>
+          </label>
+        </div>
+        
+        <button type="submit" id="submit-btn" class="w-full btn-primary font-bold py-3 px-4 rounded-md flex items-center justify-center text-white">
+          <span id="btn-text">شروع پردازش</span>
+          <div id="btn-loader" class="loader h-5 w-5 rounded-full border-2 border-t-indigo-500 border-gray-200 hidden mr-3"></div>
+        </button>
+      </form>
+      <div id="results-section" class="hidden mt-8 space-y-4"></div>
+      <div id="error-section" class="hidden mt-6"></div>
+      <footer class="text-center text-gray-500 text-xs mt-8">طراحی شده توسط سگارو • نسخه 0.2</footer>
+    </div>
+    <script>
+      // ===== CLIENT-SIDE SCRIPT =====
+      let transcriptionData = null; 
+      const DEEPGRAM_KEY_ID = 'deepgram_api_key';
+      const GROQ_KEY_ID = 'groq_api_key';
+      const GEMINI_KEY_ID = 'gemini_api_key';
+
+      // DOM Elements
+      const deepgramApiKeyInput = document.getElementById('deepgramApiKey');
+      const groqApiKeyInput = document.getElementById('groqApiKey');
+      const geminiApiKeyInput = document.getElementById('geminiApiKey');
+      const form = document.getElementById('transcription-form');
+      const submitBtn = document.getElementById('submit-btn');
+      const btnText = document.getElementById('btn-text');
+      const btnLoader = document.getElementById('btn-loader');
+      const resultsSection = document.getElementById('results-section');
+      const errorSection = document.getElementById('error-section');
+      const audioFileInput = document.getElementById('audioFile');
+      const fileLabel = document.getElementById('file-label');
+      const engineRadios = document.querySelectorAll('input[name="engine"]');
+      const deepgramKeySection = document.getElementById('deepgram-key-section');
+      const groqKeySection = document.getElementById('groq-key-section');
+      const geminiKeySection = document.getElementById('gemini-key-section');
+
+      // --- Self-Contained Client-Side SRT Engine ---
+      const ClientSRTEngine = {
+        GROQ_SRT_CONFIG: {"MAX_WORDS_PER_LINE":9,"MAX_LINES_PER_BLOCK":2,"PAUSE_THRESHOLD":0.75,"MAX_WORDS_PER_BLOCK":18,"MIN_WORDS_FOR_SENTENCE_SPLIT":7,"LOOKAHEAD_ORPHAN_THRESHOLD":5,"LINE_BALANCE_TARGET":0.45},
+        formatSrtTimestamp: function(totalSeconds) {
+          const h = String(Math.floor(totalSeconds / 3600)).padStart(2,'0');
+          const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2,'0');
+          const s = String(Math.floor(totalSeconds % 60)).padStart(2,'0');
+          const ms = String(Math.round((totalSeconds - Math.floor(totalSeconds)) * 1000)).padStart(3,'0');
+          return `${h}:${m}:${s},${ms}`;
+        },
+        isTrueSentenceEndToken: function(str) {
+          const s = String(str || '').trim();
+          return !new Set(["mr.","mrs.","ms.","dr.","prof.","sr.","jr.","st.","vs.","etc.","e.g.","i.e.","u.s.","u.k.","u.s.a.","p.m.","a.m."]).has(s.toLowerCase()) && /[.!?›Ÿ]$/.test(s);
+        },
+        groq: {
+          smartSplitText: function(text, maxWordsPerLine) {
+            const words = text.trim().split(/\s+/).filter(Boolean);
+            if (words.length <= maxWordsPerLine) return words.join(' ');
+            const lines = [];
+            for (let i = 0; i < words.length; i += maxWordsPerLine) {
+              lines.push(words.slice(i, i + maxWordsPerLine).join(' '));
+            }
+            return lines.join('\n');
+          },
+          generateSrt: function(words, userConfig) {
+            if (!words || words.length === 0) return '';
+            const config = {
+              MAX_WORDS_PER_LINE: userConfig.MAX_WORDS_PER_LINE,
+              MAX_LINES_PER_BLOCK: userConfig.MAX_LINES_PER_BLOCK,
+              PAUSE_THRESHOLD: userConfig.PAUSE_THRESHOLD || 0.75,
+              MAX_WORDS_PER_BLOCK: userConfig.MAX_WORDS_PER_LINE * userConfig.MAX_LINES_PER_BLOCK,
+              MIN_WORDS_FOR_SENTENCE_SPLIT: Math.min(userConfig.MAX_WORDS_PER_LINE, 7),
+              LOOKAHEAD_ORPHAN_THRESHOLD: 5
+            };
+            const blocks = this.createSubtitleBlocks(words, config);
+            let srtContent = '', blockIndex = 1, previousEnd = 0;
+            for (const block of blocks) {
+              if (block.words.length === 0) continue;
+              let startTime = block.words[0].start, endTime = block.words[block.words.length - 1].end;
+              if (endTime - startTime < 1.0) endTime = startTime + 1.0;
+              startTime = Math.max(startTime, previousEnd + 0.001);
+              if (endTime <= startTime) endTime = startTime + 1.0;
+              const formattedText = this.smartSplitText(block.words.map(w => w.word).join(' '), config.MAX_WORDS_PER_LINE);
+              srtContent += `${blockIndex++}\n${ClientSRTEngine.formatSrtTimestamp(startTime)} --> ${ClientSRTEngine.formatSrtTimestamp(endTime)}\n${formattedText}\n\n`;
+              previousEnd = endTime;
+            }
+            return srtContent.trim();
+          },
+          createSubtitleBlocks: function(words, config) {
+            const blocks = [], currentBlock = { words: [] };
+            for (let i = 0; i < words.length; i++) {
+              const word = words[i], nextWord = words[i + 1];
+              currentBlock.words.push(word);
+              const remainingWords = words.length - i - 1;
+              const wouldCreateOrphan = remainingWords > 0 && remainingWords < config.LOOKAHEAD_ORPHAN_THRESHOLD;
+              let shouldSplit = (i === words.length - 1) || (currentBlock.words.length >= config.MAX_WORDS_PER_BLOCK) || 
+                              (nextWord && (nextWord.start - word.end) >= config.PAUSE_THRESHOLD && !wouldCreateOrphan) ||
+                              (ClientSRTEngine.isTrueSentenceEndToken(word.word) && currentBlock.words.length >= config.MIN_WORDS_FOR_SENTENCE_SPLIT && !wouldCreateOrphan);
+              if (shouldSplit && currentBlock.words.length > 0) {
+                blocks.push({...currentBlock});
+                currentBlock.words = [];
+              }
+            }
+            if (currentBlock.words.length > 0) blocks.push(currentBlock);
+            return blocks;
+          }
+        }
+      };
+
+      // Event Listeners
+      document.addEventListener('DOMContentLoaded', () => {
+        deepgramApiKeyInput.value = localStorage.getItem(DEEPGRAM_KEY_ID) || '';
+        groqApiKeyInput.value = localStorage.getItem(GROQ_KEY_ID) || '';
+        geminiApiKeyInput.value = localStorage.getItem(GEMINI_KEY_ID) || '';
+      });
+
+      engineRadios.forEach(radio => radio.addEventListener('change', (e) => {
+          const engine = e.target.value;
+          deepgramKeySection.classList.toggle('hidden', engine !== 'deepgram');
+          groqKeySection.classList.toggle('hidden', engine !== 'groq');
+          geminiKeySection.classList.toggle('hidden', engine !== 'gemini');
+      }));
+
+      audioFileInput.addEventListener('change', () => {
+        fileLabel.textContent = audioFileInput.files.length > 0 ? audioFileInput.files[0].name : 'برای انتخاب فایل کلیک کنید';
+      });
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        localStorage.setItem(DEEPGRAM_KEY_ID, deepgramApiKeyInput.value.trim());
+        localStorage.setItem(GROQ_KEY_ID, groqApiKeyInput.value.trim());
+        localStorage.setItem(GEMINI_KEY_ID, geminiApiKeyInput.value.trim());
+        
+        resultsSection.innerHTML = '';
+        errorSection.innerHTML = '';
+        resultsSection.classList.add('hidden');
+        errorSection.classList.add('hidden');
+        submitBtn.disabled = true;
+        btnText.textContent = 'در حال پردازش...';
+        btnLoader.classList.remove('hidden');
+
+        const formData = new FormData(form);
+        try {
+          const response = await fetch('/transcribe', { method: 'POST', body: formData });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || 'یک خطای ناشناخته رخ داد.');
+          displayResults(result);
+        } catch (err) {
+          displayError(err.message);
+        } finally {
+          submitBtn.disabled = false;
+          btnText.textContent = 'شروع پردازش';
+          btnLoader.classList.add('hidden');
+        }
+      });
+      
+      function getLiveTuningHTML(engine) {
+          const downloadId = engine === 'deepgram' ? 'word-srt-link' : 'groq-srt-link';
+          const defaultText = engine === 'deepgram' ? 'دانلود (کلمه به کلمه)' : 'دانلود زیرنویس حرفه‌ای';
+          return `
+              <div class="grid grid-cols-1 gap-4">
+                <button id="${downloadId}" class="download-btn text-white font-bold py-3 px-4 rounded-md text-center transition flex items-center justify-center">
+                  <svg class="download-icon w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                  <span>${defaultText}</span>
+                </button>
+              </div>
+              <fieldset class="border border-gray-600 p-4 rounded-lg mt-4 bg-gray-800/30">
+                <label class="flex items-center cursor-pointer">
+                  <input type="checkbox" id="enable-word-settings" class="form-checkbox h-4 w-4 rounded text-indigo-500 bg-gray-700 border-gray-600">
+                  <span class="mr-2 text-sm text-gray-200">فعال‌سازی تنظیمات زنده</span>
+                </label>
+                <div id="word-settings-inputs" class="hidden grid grid-cols-2 gap-4 pt-4">
+                  <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1">کلمات در هر خط</label>
+                    <input type="number" id="wordsPerLine" value="9" min="1" max="20" class="form-input text-gray-200 w-full rounded-md p-2 text-sm">
+                  </div>
+                  <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1">خطوط در هر بلوک</label>
+                    <input type="number" id="linesPerBlock" value="2" min="1" max="5" class="form-input text-gray-200 w-full rounded-md p-2 text-sm">
+                  </div>
+                </div>
+              </fieldset>
+          `;
+      }
+
+      function displayResults(result) {
+        let content = '';
+        transcriptionData = result;
+        
+        const transcriptHTML = result.transcript ? `
+            <div class="mt-4 space-y-2">
+                <h3 class="text-md font-semibold text-gray-300">متن کامل (Transcript):</h3>
+                <div class="transcript-box p-3 rounded-md text-gray-300 text-sm">
+                    <pre class="whitespace-pre-wrap font-sans">${result.transcript}</pre>
+                </div>
+            </div>
+        ` : '';
+        
+        if (result.engine === 'deepgram') {
+            const sentenceLink = createDownloadButtonHTML('دانلود (جمله به جمله)', result.srtBySentence, 'deepgram_sentence.srt', 'sentence-srt-link');
+            const liveTuningHTML = getLiveTuningHTML('deepgram');
+            content = `<div class="grid grid-cols-1 gap-4 mt-4">${sentenceLink}</div><div class="mt-4">${liveTuningHTML}</div>${transcriptHTML}`;
+        } else if (result.engine === 'groq') {
+            const liveTuningHTML = getLiveTuningHTML('groq');
+            content = `<div class="mt-4">${liveTuningHTML}</div>${transcriptHTML}`;
+        } else if (result.engine === 'gemini') {
+            const srtButton = createDownloadButtonHTML('دانلود زیرنویس SRT', result.srt, 'gemini_professional.srt');
+            content = `<div class="grid grid-cols-1 gap-4 mt-4">${srtButton}</div>${transcriptHTML}`;
+        }
+        
+        resultsSection.innerHTML = `<div class="fade-in-up"><h2 class="text-xl font-semibold text-center text-green-400 mb-4">پردازش با موفقیت انجام شد!</h2>${content}</div>`;
+        resultsSection.classList.remove('hidden');
+
+        if (result.engine === 'deepgram') {
+          updateDownloadButton(document.getElementById('word-srt-link'), result.srtByWord, 'deepgram_word.srt');
+        } else if (result.engine === 'groq') {
+          updateDownloadButton(document.getElementById('groq-srt-link'), result.srt, 'groq_professional.srt');
+        }
+
+        if (result.engine === 'deepgram' || result.engine === 'groq') {
+            const enableSettingsCheckbox = document.getElementById('enable-word-settings');
+            const wordSettingsInputs = document.getElementById('word-settings-inputs');
+            const wordsPerLineInput = document.getElementById('wordsPerLine');
+            const linesPerBlockInput = document.getElementById('linesPerBlock');
+            const debouncedRegenerate = debounce(regenerateSrt, 250);
+
+            enableSettingsCheckbox.addEventListener('change', e => {
+                wordSettingsInputs.classList.toggle('hidden', !e.target.checked);
+                if(e.target.checked) debouncedRegenerate();
+            });
+            wordsPerLineInput.addEventListener('input', () => { if (enableSettingsCheckbox.checked) debouncedRegenerate(); });
+            linesPerBlockInput.addEventListener('input', () => { if (enableSettingsCheckbox.checked) debouncedRegenerate(); });
+        }
+      }
+      
+      function regenerateSrt() {
+          if (!transcriptionData) return;
+          const enableSettings = document.getElementById('enable-word-settings');
+          if (!enableSettings || !enableSettings.checked) return;
+          
+          const wordsPerLine = parseInt(document.getElementById('wordsPerLine').value, 10);
+          const linesPerBlock = parseInt(document.getElementById('linesPerBlock').value, 10);
+          if (isNaN(wordsPerLine) || wordsPerLine < 1 || isNaN(linesPerBlock) || linesPerBlock < 1) return;
+
+          const freshConfig = { MAX_WORDS_PER_LINE: wordsPerLine, MAX_LINES_PER_BLOCK: linesPerBlock, PAUSE_THRESHOLD: 0.75 };
+          
+          let wordsToProcess, downloadButtonId, baseFilename;
+          if (transcriptionData.engine === 'deepgram') {
+              const deepgramWords = transcriptionData.rawResponse.results.channels[0].alternatives[0].words;
+              wordsToProcess = deepgramWords.map(w => ({ word: w.punctuated_word || w.word, start: w.start, end: w.end }));
+              downloadButtonId = 'word-srt-link';
+              baseFilename = 'deepgram_word_custom';
+          } else if (transcriptionData.engine === 'groq') {
+              wordsToProcess = transcriptionData.rawWords;
+              downloadButtonId = 'groq-srt-link';
+              baseFilename = 'groq_custom';
+          } else return;
+
+          const newSrtContent = ClientSRTEngine.groq.generateSrt(wordsToProcess, freshConfig);
+          const downloadButton = document.getElementById(downloadButtonId);
+          updateDownloadButton(downloadButton, newSrtContent, `${baseFilename}_${wordsPerLine}w_${linesPerBlock}l.srt`);
+          
+          const span = downloadButton.querySelector('span');
+          if (span) {
+              const defaultText = transcriptionData.engine === 'deepgram' ? 'دانلود (کلمه به کلمه)' : 'دانلود زیرنویس حرفه‌ای';
+              span.textContent = `${defaultText} (${wordsPerLine} کلمه، ${linesPerBlock} خط)`;
+          }
+      }
+
+      function displayError(message) {
+        errorSection.innerHTML = `<div class="fade-in-up bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded-md"><strong class="font-bold">خطا:</strong> <span class="mr-2">${message}</span></div>`;
+        errorSection.classList.remove('hidden');
+      }
+
+      function createDownloadButtonHTML(text, content, filename, id = '') {
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        return `<button ${id ? `id="${id}"` : ''} class="download-btn text-white font-bold py-3 px-4 rounded-md text-center transition flex items-center justify-center" onclick="downloadFile('${url}', '${filename}')">
+          <svg class="download-icon w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+          <span>${text}</span>
+        </button>`;
+      }
+      
+      function updateDownloadButton(element, content, filename) {
+        if (!element) return;
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        element.onclick = () => downloadFile(url, filename);
+      }
+      
+      function downloadFile(url, filename) {
+        const a = document.createElement('a'); a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      }
+      
+      function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+          const later = () => { clearTimeout(timeout); func(...args); };
+          clearTimeout(timeout);
+          timeout = setTimeout(later, wait);
+        };
+      }
+    </script>
+    </div>
+  </body>
+  </html>
+  
