@@ -214,7 +214,7 @@
             return `magnet:?xt=urn:btih:${hash}&dn=${encodedTitle}${trackerParams}`;
         }
 
-        async function searchMovies() {
+        function searchMovies() {
             const query = document.getElementById('searchInput').value;
             const quality = document.getElementById('qualitySelect').value;
             const genre = document.getElementById('genreSelect').value;
@@ -227,27 +227,47 @@
             error.style.display = 'none';
             container.innerHTML = '';
 
-            let url = `${API_BASE}/list_movies.json?limit=20`;
+            // Remove any existing script tags from previous calls
+            const oldScript = document.getElementById('jsonp-script');
+            if (oldScript) oldScript.remove();
+
+            // Create callback function name
+            const callbackName = 'ytsCallback' + Date.now();
+            
+            // Build URL with JSONP
+            let url = `${API_BASE}/list_movies.jsonp?limit=20&callback=${callbackName}`;
             if (query) url += `&query_term=${encodeURIComponent(query)}`;
             if (quality) url += `&quality=${quality}`;
             if (genre) url += `&genre=${genre}`;
 
-            try {
-                const response = await fetch(url);
-                const data = await response.json();
-                
+            // Create global callback function
+            window[callbackName] = function(data) {
                 loading.style.display = 'none';
-
+                
                 if (data.status === 'ok' && data.data.movies) {
                     displayMovies(data.data.movies);
                 } else {
                     container.innerHTML = '<div class="no-results">No movies found. Try different search terms.</div>';
                 }
-            } catch (err) {
+                
+                // Cleanup
+                delete window[callbackName];
+                const script = document.getElementById('jsonp-script');
+                if (script) script.remove();
+            };
+
+            // Create script tag for JSONP
+            const script = document.createElement('script');
+            script.id = 'jsonp-script';
+            script.src = url;
+            script.onerror = function() {
                 loading.style.display = 'none';
-                error.textContent = 'Error loading movies. Please try again.';
+                error.textContent = 'Error loading movies. Please check your connection and try again.';
                 error.style.display = 'block';
-            }
+                delete window[callbackName];
+            };
+            
+            document.body.appendChild(script);
         }
 
         function displayMovies(movies) {
