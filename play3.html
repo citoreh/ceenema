@@ -480,29 +480,36 @@
             playerContent.id = 'player-content';
             
             // Create video element with magnet link
-            const videoHTML = `
-                <video 
-                    controls 
-                    autoplay
-                    src="${magnetLink}"
-                    style="width: 100%; max-height: 70vh; background: #000;"
-                    poster="">
-                </video>
-            `;
+            const video = document.createElement('video');
+            video.controls = true;
+            video.src = magnetLink;
+            video.style.width = '100%';
+            video.style.maxHeight = '70vh';
+            video.style.background = '#000';
             
-            playerContent.innerHTML = videoHTML;
+            playerContent.appendChild(video);
             playerContainer.appendChild(playerContent);
             modal.classList.add('active');
             
             // Prevent body scroll when modal is open
             document.body.style.overflow = 'hidden';
             
-            // Reinitialize Webtor for the new video element
-            if (window.webtor && window.webtor.makeEmbeds) {
-                setTimeout(() => {
-                    window.webtor.makeEmbeds();
-                }, 100);
+            // Wait for Webtor SDK to load and initialize the player
+            function initWebtor() {
+                if (typeof window.webtor !== 'undefined' && window.webtor.makeEmbeds) {
+                    try {
+                        window.webtor.makeEmbeds();
+                        console.log('Webtor player initialized');
+                    } catch (e) {
+                        console.error('Webtor initialization error:', e);
+                    }
+                } else {
+                    // Wait a bit more for SDK to load
+                    setTimeout(initWebtor, 200);
+                }
             }
+            
+            setTimeout(initWebtor, 100);
         }
 
         function closePlayer() {
@@ -513,8 +520,12 @@
                 // Find any video elements and stop them
                 const videos = playerContent.getElementsByTagName('video');
                 for (let video of videos) {
-                    if (video.pause && typeof video.pause === 'function') {
-                        video.pause();
+                    try {
+                        if (video.pause && typeof video.pause === 'function') {
+                            video.pause();
+                        }
+                    } catch (e) {
+                        // Ignore errors on pause
                     }
                 }
                 playerContent.remove();
