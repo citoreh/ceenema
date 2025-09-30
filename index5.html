@@ -463,9 +463,6 @@
                 const card = document.createElement('div');
                 card.className = 'movie-card';
                 
-                // Get the best available poster image
-                const posterUrl = movie.large_cover_image || movie.medium_cover_image || movie.small_cover_image || 'https://via.placeholder.com/300x450/1a1a1a/daa520?text=No+Poster';
-                
                 // Show all available torrents
                 const torrents = movie.torrents && movie.torrents.length > 0 
                     ? movie.torrents.map(t => 
@@ -476,7 +473,7 @@
                     : '<span style="color: #999;">No torrents available</span>';
 
                 card.innerHTML = `
-                    <img src="${posterUrl}" alt="${movie.title}" class="movie-poster" onerror="this.src='https://via.placeholder.com/300x450/1a1a1a/daa520?text=No+Poster'">
+                    <img src="${movie.medium_cover_image}" alt="${movie.title}" class="movie-poster" loading="lazy">
                     <div class="movie-info">
                         <div class="movie-title">${movie.title}</div>
                         <div class="movie-year">Year: ${movie.year}</div>
