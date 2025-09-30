@@ -197,7 +197,6 @@
 
     <script>
         const API_BASE = 'https://yts.mx/api/v2';
-        const CORS_PROXY = 'https://corsproxy.io/?';
         const TRACKERS = [
             'udp://open.demonii.com:1337/announce',
             'udp://tracker.openbittorrent.com:80',
@@ -228,13 +227,16 @@
             error.style.display = 'none';
             container.innerHTML = '';
 
-            let url = `${API_BASE}/list_movies.json?limit=20`;
-            if (query) url += `&query_term=${encodeURIComponent(query)}`;
-            if (quality) url += `&quality=${quality}`;
-            if (genre) url += `&genre=${genre}`;
+            let apiUrl = `${API_BASE}/list_movies.json?limit=20`;
+            if (query) apiUrl += `&query_term=${encodeURIComponent(query)}`;
+            if (quality) apiUrl += `&quality=${quality}`;
+            if (genre) apiUrl += `&genre=${genre}`;
+
+            // Use allOrigins CORS proxy
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`;
 
             try {
-                const response = await fetch(CORS_PROXY + encodeURIComponent(url));
+                const response = await fetch(proxyUrl);
                 const data = await response.json();
                 
                 loading.style.display = 'none';
@@ -246,7 +248,7 @@
                 }
             } catch (err) {
                 loading.style.display = 'none';
-                error.textContent = 'Error loading movies: ' + err.message + '. Please try again.';
+                error.textContent = 'Error loading movies: ' + err.message + '. The API might be temporarily unavailable.';
                 error.style.display = 'block';
                 console.error('Error:', err);
             }
