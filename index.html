@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YTS Movie Browser</title>
+    <title>CeeNema Movie Browser</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Cormorant+Garamond:wght@300;400;600&display=swap');
 
@@ -298,11 +298,53 @@
             font-style: italic;
             letter-spacing: 2px;
         }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-top: 60px;
+            padding: 30px;
+            background: rgba(20, 20, 20, 0.8);
+            border-radius: 2px;
+            border: 1px solid rgba(218, 165, 32, 0.3);
+        }
+
+        .pagination button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, rgba(139, 69, 19, 0.9) 0%, rgba(184, 134, 11, 0.9) 100%);
+            color: #f5f5dc;
+            border: 1px solid rgba(218, 165, 32, 0.3);
+            cursor: pointer;
+            font-family: 'Cormorant Garamond', serif;
+            font-weight: 600;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+        }
+
+        .pagination button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .pagination button:not(:disabled):hover {
+            box-shadow: 0 0 20px rgba(218, 165, 32, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .pagination .page-info {
+            color: #daa520;
+            font-size: 1.2em;
+            font-weight: 600;
+            letter-spacing: 1px;
+            margin: 0 15px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎬 YTS Movie Browser</h1>
+        <h1>🎬 CeeNema Movie Browser</h1>
         
         <div class="search-box">
             <input type="text" id="searchInput" placeholder="Search movies...">
@@ -322,12 +364,13 @@
                 <option value="sci-fi">Sci-Fi</option>
                 <option value="thriller">Thriller</option>
             </select>
-            <button onclick="searchMovies()">Search</button>
+            <button onclick="currentPage = 1; searchMovies(1);">Search</button>
         </div>
 
         <div id="error" class="error" style="display: none;"></div>
         <div id="loading" class="loading" style="display: none;">Loading...</div>
         <div id="moviesContainer" class="movies-grid"></div>
+        <div id="pagination" class="pagination" style="display: none;"></div>
     </div>
 
     <script>
@@ -343,13 +386,17 @@
             'udp://tracker.leechers-paradise.org:6969'
         ];
 
+        let currentPage = 1;
+        let totalPages = 1;
+
         function createMagnetLink(hash, title) {
             const encodedTitle = encodeURIComponent(title);
             const trackerParams = TRACKERS.map(t => `&tr=${encodeURIComponent(t)}`).join('');
             return `magnet:?xt=urn:btih:${hash}&dn=${encodedTitle}${trackerParams}`;
         }
 
-        async function searchMovies() {
+        async function searchMovies(page = 1) {
+            currentPage = page;
             const query = document.getElementById('searchInput').value;
             const quality = document.getElementById('qualitySelect').value;
             const genre = document.getElementById('genreSelect').value;
@@ -357,12 +404,14 @@
             const loading = document.getElementById('loading');
             const error = document.getElementById('error');
             const container = document.getElementById('moviesContainer');
+            const pagination = document.getElementById('pagination');
             
             loading.style.display = 'block';
             error.style.display = 'none';
             container.innerHTML = '';
+            pagination.style.display = 'none';
 
-            let apiUrl = `${API_BASE}/list_movies.json?limit=20`;
+            let apiUrl = `${API_BASE}/list_movies.json?limit=20&page=${page}`;
             if (query) apiUrl += `&query_term=${encodeURIComponent(query)}`;
             if (quality) apiUrl += `&quality=${quality}`;
             if (genre) apiUrl += `&genre=${genre}`;
@@ -378,6 +427,9 @@
 
                 if (data.status === 'ok' && data.data && data.data.movies) {
                     displayMovies(data.data.movies);
+                    totalPages = Math.ceil(data.data.movie_count / 20);
+                    displayPagination();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
                 } else {
                     container.innerHTML = '<div class="no-results">No movies found. Try different search terms.</div>';
                 }
@@ -389,6 +441,21 @@
             }
         }
 
+        function displayPagination() {
+            const pagination = document.getElementById('pagination');
+            pagination.style.display = 'flex';
+            
+            pagination.innerHTML = `
+                <button onclick="searchMovies(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
+                    ← Previous
+                </button>
+                <span class="page-info">Page ${currentPage} of ${totalPages}</span>
+                <button onclick="searchMovies(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>
+                    Next →
+                </button>
+            `;
+        }
+
         function displayMovies(movies) {
             const container = document.getElementById('moviesContainer');
             
@@ -396,20 +463,32 @@
                 const card = document.createElement('div');
                 card.className = 'movie-card';
                 
-                const torrents = movie.torrents.map(t => 
-                    `<a href="${createMagnetLink(t.hash, movie.title)}" class="torrent-link">
-                        ${t.quality} (${t.size})
-                    </a>`
-                ).join('');
+                // Use direct image URL - browsers allow cross-origin images by default
+                const posterUrl = movie.medium_cover_image;
+                
+                // Show all available torrents with both magnet and torrent file links
+                const torrents = movie.torrents && movie.torrents.length > 0 
+                    ? movie.torrents.map(t => 
+                        `<div style="margin: 8px 0;">
+                            <strong style="color: #daa520;">${t.quality} ${t.type || ''} (${t.size})</strong><br>
+                            <a href="${createMagnetLink(t.hash, movie.title)}" class="torrent-link" style="margin-top: 5px;">
+                                🧲 Magnet
+                            </a>
+                            <a href="${t.url}" class="torrent-link" style="margin-top: 5px;" download>
+                                📥 Torrent File
+                            </a>
+                        </div>`
+                    ).join('')
+                    : '<span style="color: #999;">No torrents available</span>';
 
                 card.innerHTML = `
-                    <img src="${movie.medium_cover_image}" alt="${movie.title}" class="movie-poster">
+                    <img src="${posterUrl}" alt="${movie.title}" class="movie-poster">
                     <div class="movie-info">
                         <div class="movie-title">${movie.title}</div>
                         <div class="movie-year">Year: ${movie.year}</div>
                         <div class="movie-rating">⭐ ${movie.rating}/10</div>
                         <div class="torrents">
-                            <strong>Download:</strong><br>
+                            <strong>Download Options:</strong><br>
                             ${torrents}
                         </div>
                     </div>
@@ -420,10 +499,14 @@
         }
 
         document.getElementById('searchInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') searchMovies();
+            if (e.key === 'Enter') {
+                currentPage = 1;
+                searchMovies(1);
+            }
         });
 
-        searchMovies();
+        // Load initial movies
+        searchMovies(1);
     </script>
 </body>
 </html>
