@@ -445,19 +445,7 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@webtor/embed-sdk-js/dist/index.min.js" charset="utf-8" async></script>
-    <script>
-        // Check if Webtor loaded successfully
-        window.addEventListener('load', () => {
-            setTimeout(() => {
-                if (typeof window.webtor === 'undefined') {
-                    console.error('Webtor SDK failed to load');
-                } else {
-                    console.log('Webtor SDK loaded successfully');
-                }
-            }, 1000);
-        });
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@webtor/embed-sdk-js/dist/index.min.js" charset="utf-8"></script>
     <script>
         const API_BASE = 'https://yts.mx/api/v2';
         const TRACKERS = [
