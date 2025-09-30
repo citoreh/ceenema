@@ -447,6 +447,18 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@webtor/embed-sdk-js/dist/index.min.js" charset="utf-8" async></script>
     <script>
+        // Check if Webtor loaded successfully
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                if (typeof window.webtor === 'undefined') {
+                    console.error('Webtor SDK failed to load');
+                } else {
+                    console.log('Webtor SDK loaded successfully');
+                }
+            }, 1000);
+        });
+    </script>
+    <script>
         const API_BASE = 'https://yts.mx/api/v2';
         const TRACKERS = [
             'udp://open.demonii.com:1337/announce',
@@ -461,6 +473,7 @@
 
         let currentPage = 1;
         let totalPages = 1;
+        let webtorCheckTimeout;
 
         function openPlayer(magnetLink, movieTitle, quality) {
             const modal = document.getElementById('playerModal');
@@ -478,35 +491,57 @@
             // Create new player content div
             const playerContent = document.createElement('div');
             playerContent.id = 'player-content';
+            playerContent.innerHTML = '<div style="color: #daa520; padding: 20px; text-align: center;">Loading Webtor player...</div>';
             
-            // Create video element with magnet link
-            const video = document.createElement('video');
-            video.controls = true;
-            video.src = magnetLink;
-            video.style.width = '100%';
-            video.style.maxHeight = '70vh';
-            video.style.background = '#000';
-            
-            playerContent.appendChild(video);
             playerContainer.appendChild(playerContent);
             modal.classList.add('active');
-            
-            // Prevent body scroll when modal is open
             document.body.style.overflow = 'hidden';
             
-            // Wait for Webtor SDK to load and initialize the player
+            // Try to initialize Webtor
+            let attempts = 0;
             function initWebtor() {
+                attempts++;
+                
                 if (typeof window.webtor !== 'undefined' && window.webtor.makeEmbeds) {
+                    console.log('Webtor SDK found, initializing...');
+                    
+                    // Create video element with magnet
+                    playerContent.innerHTML = '';
+                    const video = document.createElement('video');
+                    video.controls = true;
+                    video.src = magnetLink;
+                    video.style.width = '100%';
+                    video.style.maxHeight = '70vh';
+                    video.style.background = '#000';
+                    
+                    playerContent.appendChild(video);
+                    
                     try {
                         window.webtor.makeEmbeds();
-                        console.log('Webtor player initialized');
+                        console.log('Webtor makeEmbeds() called successfully');
                     } catch (e) {
-                        console.error('Webtor initialization error:', e);
+                        console.error('Webtor makeEmbeds() error:', e);
+                        showFallback();
                     }
-                } else {
-                    // Wait a bit more for SDK to load
+                } else if (attempts < 20) {
+                    // Keep trying for up to 4 seconds
                     setTimeout(initWebtor, 200);
+                } else {
+                    console.error('Webtor SDK not available after 4 seconds');
+                    showFallback();
                 }
+            }
+            
+            function showFallback() {
+                playerContent.innerHTML = `
+                    <div style="color: #f5f5dc; padding: 30px; text-align: center;">
+                        <p style="margin-bottom: 20px; font-size: 1.2em;">Webtor player is not available.</p>
+                        <p style="margin-bottom: 20px;">Use the magnet link below in your torrent client:</p>
+                        <a href="${magnetLink}" class="torrent-link" style="display: inline-block;">
+                            🧲 Open Magnet Link
+                        </a>
+                    </div>
+                `;
             }
             
             setTimeout(initWebtor, 100);
@@ -517,23 +552,10 @@
             const playerContent = document.getElementById('player-content');
             
             if (playerContent) {
-                // Find any video elements and stop them
-                const videos = playerContent.getElementsByTagName('video');
-                for (let video of videos) {
-                    try {
-                        if (video.pause && typeof video.pause === 'function') {
-                            video.pause();
-                        }
-                    } catch (e) {
-                        // Ignore errors on pause
-                    }
-                }
                 playerContent.remove();
             }
             
             modal.classList.remove('active');
-            
-            // Restore body scroll
             document.body.style.overflow = 'auto';
         }
 
