@@ -442,7 +442,6 @@
         <div class="player-container">
             <button class="close-player" onclick="closePlayer()">✕ Close</button>
             <div class="player-title" id="playerTitle"></div>
-            <video id="webtor-player" controls></video>
         </div>
     </div>
 
@@ -465,23 +464,62 @@
 
         function openPlayer(magnetLink, movieTitle, quality) {
             const modal = document.getElementById('playerModal');
-            const player = document.getElementById('webtor-player');
+            const playerContainer = document.querySelector('.player-container');
             const title = document.getElementById('playerTitle');
             
             title.textContent = `${movieTitle} - ${quality}`;
-            player.src = magnetLink;
+            
+            // Remove old player content
+            const oldContent = document.getElementById('player-content');
+            if (oldContent) {
+                oldContent.remove();
+            }
+            
+            // Create new player content div
+            const playerContent = document.createElement('div');
+            playerContent.id = 'player-content';
+            
+            // Create video element with magnet link
+            const videoHTML = `
+                <video 
+                    controls 
+                    autoplay
+                    src="${magnetLink}"
+                    style="width: 100%; max-height: 70vh; background: #000;"
+                    poster="">
+                </video>
+            `;
+            
+            playerContent.innerHTML = videoHTML;
+            playerContainer.appendChild(playerContent);
             modal.classList.add('active');
             
             // Prevent body scroll when modal is open
             document.body.style.overflow = 'hidden';
+            
+            // Reinitialize Webtor for the new video element
+            if (window.webtor && window.webtor.makeEmbeds) {
+                setTimeout(() => {
+                    window.webtor.makeEmbeds();
+                }, 100);
+            }
         }
 
         function closePlayer() {
             const modal = document.getElementById('playerModal');
-            const player = document.getElementById('webtor-player');
+            const playerContent = document.getElementById('player-content');
             
-            player.pause();
-            player.src = '';
+            if (playerContent) {
+                // Find any video elements and stop them
+                const videos = playerContent.getElementsByTagName('video');
+                for (let video of videos) {
+                    if (video.pause && typeof video.pause === 'function') {
+                        video.pause();
+                    }
+                }
+                playerContent.remove();
+            }
+            
             modal.classList.remove('active');
             
             // Restore body scroll
