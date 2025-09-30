@@ -463,8 +463,8 @@
                 const card = document.createElement('div');
                 card.className = 'movie-card';
                 
-                // Use CORS proxy for images too
-                const posterUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(movie.medium_cover_image)}`;
+                // Use direct image URL - browsers allow cross-origin images by default
+                const posterUrl = movie.medium_cover_image;
                 
                 // Show all available torrents
                 const torrents = movie.torrents && movie.torrents.length > 0 
@@ -476,7 +476,7 @@
                     : '<span style="color: #999;">No torrents available</span>';
 
                 card.innerHTML = `
-                    <img src="${posterUrl}" alt="${movie.title}" class="movie-poster" loading="lazy">
+                    <img src="${posterUrl}" alt="${movie.title}" class="movie-poster">
                     <div class="movie-info">
                         <div class="movie-title">${movie.title}</div>
                         <div class="movie-year">Year: ${movie.year}</div>
